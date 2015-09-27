@@ -25,14 +25,24 @@ public class myID3 extends AbstractClassifier{
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
 		getCapabilities().testWithFail(data);
-		discretization(data);
 		handleMissingValue(data);
 		makeTree(data);		
 	}
 
 	private void handleMissingValue(Instances data) {
-		// TODO Auto-generated method stub
-		
+		double[] commonValues = new double[data.numAttributes()];
+		for (int i=0; i<data.numAttributes(); i++){
+			commonValues[i] = mostCommonValue(data, data.attribute(i));
+		}
+		for (Instance inst: data) {
+			if (inst.hasMissingValue()){
+				for (int i=0; i<data.numAttributes(); i++){
+					if (inst.isMissing(i)){
+						inst.setValue(i, commonValues[i]);
+					}
+				}
+			}
+		}
 	}
 
 	private void discretization(Instances data) {
@@ -74,11 +84,13 @@ public class myID3 extends AbstractClassifier{
 		Enumeration<Instance> instEnum = data.enumerateInstances();
 		while (instEnum.hasMoreElements()) {
 			Instance instance = instEnum.nextElement();
-			Double classVal = (Double) instance.classValue();
-			if (!classes.contains(classVal)){
-				classes.add(classVal);
+			if (!instance.isMissing(att)){
+				Double classVal = (Double) instance.value(att);
+				if (!classes.contains(classVal)){
+					classes.add(classVal);
+				}
+				classCount[classes.indexOf(classVal)]++;
 			}
-			classCount[classes.indexOf(classVal)]++;
 		}
 		return classes.get(Utils.maxIndex(classCount));
 	}
