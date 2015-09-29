@@ -55,7 +55,7 @@ public class myID3 extends AbstractClassifier{
 			return;
 		}
 		
-		if ((data.numAttributes() < 2) || (data.numInstances() == 0)){	//leaf node
+		if ((data.numAttributes() < 2) || (data.numInstances() == 0)){
 			classValue = mostCommonValue(data, data.classAttribute());
 			attribute = null;
 			return;
@@ -77,7 +77,10 @@ public class myID3 extends AbstractClassifier{
 			branches = new myID3[dataBranches.length];
 			branchesVal = new ArrayList<Double>();
 			for (int i=0; i<dataBranches.length; i++){
-				branchesVal.add(i, (Double) dataBranches[i].firstInstance().value(attribute));
+				System.out.println(dataBranches[i].numInstances());
+				if (dataBranches[i].numInstances() > 0){
+					branchesVal.add(i, (Double) dataBranches[i].firstInstance().value(attribute));
+				}
 				branches[i] = new myID3();
 				branches[i].makeTree(dataBranches[i]);
 			}
@@ -98,7 +101,11 @@ public class myID3 extends AbstractClassifier{
 				classCount[classes.indexOf(classVal)]++;
 			}
 		}
-		return classes.get(Utils.maxIndex(classCount));
+		if (classes.size() > 0){
+			return classes.get(Utils.maxIndex(classCount));
+		} else {
+			return Double.NaN;
+		}
 	}
 
 	private double computeInfoGain(Instances data, Attribute att) {
