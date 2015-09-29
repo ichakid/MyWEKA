@@ -1,5 +1,6 @@
 
 import java.util.Random;
+import java.util.Scanner;
 
 import weka.classifiers.Classifier;
 import weka.classifiers.bayes.NaiveBayes;
@@ -20,6 +21,10 @@ public class MyWEKA {
 	public void loadData(String filename) throws Exception{
 		data = DataSource.read(filename);
     }
+	
+	public void setClassAttribute(int index) {
+		data.setClassIndex(index);
+	}
 	
 	public void removeAttribute(String attributeIndex) {
 		String[] options = new String[2];
@@ -52,6 +57,8 @@ public class MyWEKA {
 			model = new NaiveBayes();
 		} else if (algo.equals("j48")) {
 			model = new J48();
+		} else {
+			model = new myID3();
 		}
 		model.buildClassifier(data);
 	}
@@ -121,8 +128,26 @@ public class MyWEKA {
         DataSink.write("labeled-" + unlabeledFile, labeled);
 	}
 	
-	public static void main(String[] args) {
-
+	public static void main(String[] args) throws Exception {
+		MyWEKA mw = new MyWEKA();
+		Scanner input = new Scanner(System.in);
+		System.out.println("Welcome to MyWEKA");
+		System.out.println("1. Load Data");
+		System.out.println("2. Load Model");
+		String cmdString = input.next();
+		System.out.println("Input filename: ");
+		String filename = input.nextLine();
+		switch (cmdString) {
+			case "1": mw.loadData("/home/hayyuhanifah/Documents/weka-3-7-13/data/weather.nominal.arff");
+					  mw.setClassAttribute(4);
+					  mw.buildClassifier("ID3");
+					  mw.crossValidation();
+					  break;
+			case "2": mw.loadModel(filename);
+					  break;
+			default:
+				break;
+		}
 	}
 
 }

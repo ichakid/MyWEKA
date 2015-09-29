@@ -51,10 +51,10 @@ public class myID3 extends AbstractClassifier{
 	}
 
 	private void makeTree(Instances data) {
-		if (data.numDistinctValues(data.classIndex()) == 1){
-			classValue = data.firstInstance().classValue();
-			return;
-		}
+//		if (data.numDistinctValues(data.classIndex()) == 1){
+//			classValue = data.firstInstance().classValue();
+//			return;
+//		}
 		
 		if ((data.numAttributes() < 2) || (data.numInstances() == 0)){	//leaf node
 			classValue = mostCommonValue(data, data.classAttribute());
@@ -124,7 +124,7 @@ public class myID3 extends AbstractClassifier{
 		for (Double classVal: classes){
 			int i = classes.indexOf(classVal);
 			if (classCount[i] > 0) {
-				double temp = classCount[i]/numClasses;
+				double temp = classCount[i]/data.numInstances();
 				entropy += -temp * Utils.log2(temp);
 			}
 		}
@@ -146,9 +146,9 @@ public class myID3 extends AbstractClassifier{
 			}
 			splitData[attVals.indexOf(val)].add(inst);
 		}
-		for (int i=0; i<att.numValues(); i++) {
-			splitData[i].compactify();
-		}
+//		for (int i=0; i<att.numValues(); i++) {
+//			splitData[i].compactify();
+//		}
 		return splitData;
 	}
 
