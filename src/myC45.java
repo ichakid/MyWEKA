@@ -179,8 +179,17 @@ public class myC45 extends AbstractClassifier{
 		return splitData;
 	}
 	
-	private void handleMissingValue(Instance data) {
+	private void handleMissingValue(Instances data, Attribute att) {
+		int distinct = att.numValues();
+		List<Double> pVal = new ArrayList<Double>();
 		
+		for (Instance i : data) {
+			if (!i.isMissing(att)) {
+				if (!pVal.contains((Double) i.value(att))) {
+					pVal.add((Double) i.value(att));
+				}
+			}
+		}
 	}
 	
 	private void treePruning(myC45 tree) {
