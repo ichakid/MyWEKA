@@ -57,8 +57,10 @@ public class MyWEKA {
 			model = new NaiveBayes();
 		} else if (algo.equals("j48")) {
 			model = new J48();
-		} else {
+		} else if (algo.equals("j48")) {
 			model = new myID3();
+		} else {
+			model = new myC45();
 		}
 		model.buildClassifier(data);
 	}
@@ -138,10 +140,11 @@ public class MyWEKA {
 		System.out.println("Input filename: ");
 		String filename = input.nextLine();
 		switch (cmdString) {
-			case "1": mw.loadData("/home/icha/weka-3-7-13/data/weather.nominal.arff");
+			case "1": mw.loadData("/home/hayyuhanifah/Documents/ML/weka-3-7-13/data/weather.numeric.arff");
 					  mw.setClassAttribute(4);
-					  mw.buildClassifier("id3");
+					  mw.buildClassifier("c45");
 					  mw.crossValidation();
+//					  mw.saveModel("/home/hayyuhanifah/Documents/modelc45");
 					  break;
 			case "2": mw.loadModel(filename);
 					  break;
