@@ -237,7 +237,9 @@ public class myC45 extends AbstractClassifier{
 			branches = new myC45[dataBranches.length];
 			branchesVal = new ArrayList<Double>();
 			for (int i=0; i<dataBranches.length; i++){
-				branchesVal.add(i, (Double) dataBranches[i].firstInstance().value(attribute));
+				if (dataBranches[i].numInstances() > 0){
+					branchesVal.add(i, (Double) dataBranches[i].firstInstance().value(attribute));
+				}
 				branches[i] = new myC45();
 				branches[i].makeTree(dataBranches[i]);
 			}
@@ -278,6 +280,10 @@ public class myC45 extends AbstractClassifier{
 				classCount[classes.indexOf(classVal)]++;
 			}
 		}
-		return classes.get(Utils.maxIndex(classCount));
+		if (classes.size() > 0){
+			return classes.get(Utils.maxIndex(classCount));
+		} else {
+			return Double.NaN;
+		}
 	}
 }
