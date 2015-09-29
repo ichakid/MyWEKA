@@ -8,6 +8,7 @@ import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.NoSupportForMissingValuesException;
 import weka.core.Utils;
 
 
@@ -26,6 +27,9 @@ public class myID3 extends AbstractClassifier{
 	public void buildClassifier(Instances data) throws Exception {
 		getCapabilities().testWithFail(data);
 		handleMissingValue(data);
+		
+	    data = new Instances(data);
+	    data.deleteWithMissingClass();
 		makeTree(data);		
 	}
 
@@ -45,19 +49,15 @@ public class myID3 extends AbstractClassifier{
 		}
 	}
 
-	private void discretization(Instances data) {
-		// TODO Auto-generated method stub
-		
-	}
-
 	private void makeTree(Instances data) {
-//		if (data.numDistinctValues(data.classIndex()) == 1){
-//			classValue = data.firstInstance().classValue();
-//			return;
-//		}
+		if (data.numDistinctValues(data.classIndex()) == 1){
+			classValue = data.firstInstance().classValue();
+			return;
+		}
 		
 		if ((data.numAttributes() < 2) || (data.numInstances() == 0)){	//leaf node
 			classValue = mostCommonValue(data, data.classAttribute());
+			attribute = null;
 			return;
 		}
 		
@@ -68,13 +68,19 @@ public class myID3 extends AbstractClassifier{
 			infoGains[att.index()] = computeInfoGain(data, att);
 		}
 		attribute = data.attribute(Utils.maxIndex(infoGains));
-		Instances[] dataBranches = splitData(data, attribute);
-		branches = new myID3[dataBranches.length];
-		branchesVal = new ArrayList<Double>();
-		for (int i=0; i<dataBranches.length; i++){
-			branchesVal.add(i, (Double) dataBranches[i].firstInstance().value(attribute));
-			branches[i] = new myID3();
-			branches[i].makeTree(dataBranches[i]);
+		
+		if (Utils.eq(infoGains[attribute.index()], 0)){
+			  attribute = null;
+			  classValue = mostCommonValue(data, data.classAttribute());
+		} else {
+			Instances[] dataBranches = splitData(data, attribute);
+			branches = new myID3[dataBranches.length];
+			branchesVal = new ArrayList<Double>();
+			for (int i=0; i<dataBranches.length; i++){
+				branchesVal.add(i, (Double) dataBranches[i].firstInstance().value(attribute));
+				branches[i] = new myID3();
+				branches[i].makeTree(dataBranches[i]);
+			}
 		}
 	}
 
@@ -124,8 +130,8 @@ public class myID3 extends AbstractClassifier{
 		for (Double classVal: classes){
 			int i = classes.indexOf(classVal);
 			if (classCount[i] > 0) {
-				double temp = classCount[i]/data.numInstances();
-				entropy += -temp * Utils.log2(temp);
+				double temp = (double) classCount[i] / (double) data.numInstances();
+				entropy += (-1) * temp * Utils.log2(temp);
 			}
 		}
 		return entropy;
@@ -146,9 +152,9 @@ public class myID3 extends AbstractClassifier{
 			}
 			splitData[attVals.indexOf(val)].add(inst);
 		}
-//		for (int i=0; i<att.numValues(); i++) {
-//			splitData[i].compactify();
-//		}
+		for (int i=0; i<att.numValues(); i++) {
+			splitData[i].compactify();
+		}
 		return splitData;
 	}
 
@@ -161,12 +167,6 @@ public class myID3 extends AbstractClassifier{
 	}
 
 	@Override
-	public double[] distributionForInstance(Instance arg0) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Capabilities getCapabilities() {
 		Capabilities capabilities = new Capabilities(this);
 		capabilities.disableAll();
@@ -175,7 +175,6 @@ public class myID3 extends AbstractClassifier{
 		//enable multi class
 		
 		capabilities.enable(Capability.NOMINAL_ATTRIBUTES);
-		capabilities.enable(Capability.NUMERIC_ATTRIBUTES);
 		return capabilities;
 	}
 }
