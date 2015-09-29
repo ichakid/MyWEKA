@@ -138,9 +138,9 @@ public class MyWEKA {
 		System.out.println("Input filename: ");
 		String filename = input.nextLine();
 		switch (cmdString) {
-			case "1": mw.loadData("/home/hayyuhanifah/Documents/weka-3-7-13/data/weather.nominal.arff");
+			case "1": mw.loadData("/home/icha/weka-3-7-13/data/weather.nominal.arff");
 					  mw.setClassAttribute(4);
-					  mw.buildClassifier("ID3");
+					  mw.buildClassifier("id3");
 					  mw.crossValidation();
 					  break;
 			case "2": mw.loadModel(filename);
