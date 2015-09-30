@@ -3,8 +3,6 @@ import java.util.Enumeration;
 import java.util.List;
 
 import weka.classifiers.AbstractClassifier;
-import weka.classifiers.trees.j48.BinC45Split;
-import weka.classifiers.trees.j48.Distribution;
 import weka.core.Attribute;
 import weka.core.Capabilities;
 import weka.core.Instance;
@@ -32,9 +30,7 @@ public class myC45 extends AbstractClassifier{
 	
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
-		// TODO Auto-generated method stub
 		getCapabilities().testWithFail(data);
-//		handleMissingValue(data);
 		
 	    data = new Instances(data);
 	    data.deleteWithMissingClass();
@@ -43,7 +39,6 @@ public class myC45 extends AbstractClassifier{
 	
 	@Override
 	public double classifyInstance(Instance inst) throws Exception {
-		// TODO Auto-generated method stub
 		if (attribute == null) {
 			return classValue;
 		}
@@ -51,12 +46,6 @@ public class myC45 extends AbstractClassifier{
 			return branches[Utils.maxIndex(weights)].classifyInstance(inst);
 		}
 		return branches[branchesVal.indexOf((Double) inst.value(attribute))].classifyInstance(inst);
-	}
-
-	@Override
-	public double[] distributionForInstance(Instance arg0) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override
@@ -85,10 +74,8 @@ public class myC45 extends AbstractClassifier{
 		return gain;
 	}
 	
-
 	private double computeEntropy(Instances data) {
 		double entropy = 0;
-//		System.out.println("numclasses " + data.numClasses());
 		int nc = data.numClasses();
 		int[] classCount = new int[nc];
 		List<Double> classes = new ArrayList<Double>();
@@ -193,23 +180,6 @@ public class myC45 extends AbstractClassifier{
 			splitData[i].compactify();
 		}
 		return splitData;
-	}
-	
-	private void handleMissingValue(Instances data, Attribute att) {
-		int distinct = att.numValues();
-		List<Double> pVal = new ArrayList<Double>();
-		
-		for (Instance i : data) {
-			if (!i.isMissing(att)) {
-				if (!pVal.contains((Double) i.value(att))) {
-					pVal.add((Double) i.value(att));
-				}
-			}
-		}
-	}
-	
-	private void treePruning(myC45 tree) {
-		
 	}
 	
 	private void makeTree(Instances data) {
