@@ -23,6 +23,12 @@ public class myC45 extends AbstractClassifier{
 	
 	private static final long serialVersionUID = 5L;
 	
+	public void setWeights(Branch[] dataBranches){
+		for (int i=0; i<dataBranches.length; i++) {
+			weights[i] = dataBranches[i].weight;
+		}
+	}
+	
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
 		// TODO Auto-generated method stub
@@ -64,11 +70,15 @@ public class myC45 extends AbstractClassifier{
 	
 	private double computeInfoGain(Instances data, Attribute att) {
 		double gain = computeEntropy(data);
-		Instances[] splitData = splitData(data, att);
-		for (Instances split : splitData){
-			if (split.numInstances() > 0){
-				gain -= ((double )split.numInstances() / (double) data.numInstances())
-					* computeEntropy(split);
+		Branch[] splitData = splitData(data, att);
+		double totalWeight = 0;
+		for (Branch split : splitData){
+			totalWeight += split.weight;
+		}
+		for (Branch split : splitData){
+			if (split.data.numInstances() > 0){
+				gain -= ((double )split.weight / (double) totalWeight)
+					* computeEntropy(split.data);
 			}
 		}
 		return gain;
@@ -100,13 +110,11 @@ public class myC45 extends AbstractClassifier{
 		return entropy;
 	}
 
-	private Instances[] splitData(Instances data, Attribute att) {
+	private Branch[] splitData(Instances data, Attribute att) {
 		List<Double> attVals = new ArrayList<Double>();
-		Instances[] splitData = new Instances[att.numValues()];
-		weights = new double[att.numValues()];
+		Branch[] splitData = new Branch[att.numValues()];
 		for (int i=0; i<att.numValues(); i++) {
-			splitData[i] = new Instances(data, data.numInstances());
-			weights[i] = 0;
+			splitData[i] = new Branch(data, data.numInstances());
 		}
 		Enumeration<Instance> instEnum = data.enumerateInstances();
 		while (instEnum.hasMoreElements()) {
@@ -117,21 +125,20 @@ public class myC45 extends AbstractClassifier{
 					attVals.add(val);
 				}
 				splitData[attVals.indexOf(val)].add(inst);
-				weights[attVals.indexOf(val)]++;
 			}
 		}
 
 		int n = 0;
 		for (int i=0; i<att.numValues(); i++) {
-			splitData[i].compactify();
-			n += splitData[i].size();
+			splitData[i].data.compactify();
+			n += splitData[i].data.size();
 		}
 		
 		for (Instance inst: data){
 			if (inst.isMissing(att)){
 				for (Double val: attVals){
 					int idx = attVals.indexOf(val);
-					weights[idx] += (double) splitData[idx].size()/(double)n;
+					splitData[idx].addWeight((double) splitData[idx].data.size()/(double)n);
 				}
 			}
 		}
@@ -161,21 +168,10 @@ public class myC45 extends AbstractClassifier{
 			infoGains[realIdx] = gain;
 		}
 		// return yang info gainnya paling tinggi
-		int idxOfMax = getMaxValue(infoGains);
+		int idxOfMax = Utils.maxIndex(infoGains);
 		ret[0] = splitValue[idxOfMax];
 		ret[1] = infoGains[idxOfMax];
-//		System.out.println("split val " + ret[0] + " ig " + ret[1]);
 		return ret;
-	}
-	
-	public int getMaxValue(double[] d) {
-		int idx = 0;
-		for (int i = 1; i < d.length; i++) {
-			if (d[i] > d[idx]) {
-				idx = i;
-			}
-		}
-		return idx;
 	}
 	
 	private Instances[] binarySplit(Instances data, int nFirstInstances) {
@@ -187,8 +183,6 @@ public class myC45 extends AbstractClassifier{
 		for (int j = 0; j < nFirstInstances; j++) {
 			Instance tmp = data.instance(j);	
 			splitData[0].add(tmp);
-//			System.out.println("nilai atribut numerik " + tmp.value(1));
-//			System.out.println("nilai atribut numerik2 " + splitData[0].get(j).value(1));
 		}
 		for (int i = nFirstInstances; i < dataSize; i++) {
 			Instance tmp2 = data.instance(i);
@@ -234,9 +228,8 @@ public class myC45 extends AbstractClassifier{
 		while (attEnum.hasMoreElements()) {
 			Attribute att = (Attribute) attEnum.nextElement();
 			if (!att.isNumeric()) {
-                             
+                infoGains[att.index()] = computeInfoGain(data, att);             
 			} else {
-//				System.out.println("nilai infogain numerik " + handleNumericAttr(data, att)[1]);
 				numericSplitter = handleNumericAttr(data, att);
 				infoGains[att.index()] = numericSplitter[1];
 			}
@@ -247,7 +240,7 @@ public class myC45 extends AbstractClassifier{
 			  attribute = null;
 			  classValue = mostCommonValue(data, data.classAttribute());
 		} else {
-			Instances[] dataBranches;
+			Branch[] dataBranches;
  			if (!attribute.isNumeric()) {
 				dataBranches = splitData(data, attribute);
 			} else {
@@ -255,48 +248,45 @@ public class myC45 extends AbstractClassifier{
 				System.out.println(splitVal);
 				dataBranches = splitWithValue(data, splitVal, attribute);
 			}
+			setWeights(dataBranches);
 			branches = new myC45[dataBranches.length];
 			branchesVal = new ArrayList<Double>();
 			for (int i=0; i<dataBranches.length; i++){
-				if (dataBranches[i].numInstances() > 0){
-					branchesVal.add(i, (Double) dataBranches[i].firstInstance().value(attribute));
+				if (dataBranches[i].data.numInstances() > 0){
+					branchesVal.add(i, (Double) dataBranches[i].data.firstInstance().value(attribute));
 				}
 				branches[i] = new myC45();
-				branches[i].makeTree(dataBranches[i]);
+				branches[i].makeTree(dataBranches[i].data);
 			}
 		}
 	}
 	
-	private Instances[] splitWithValue(Instances data, double value, Attribute att) {
+	private Branch[] splitWithValue(Instances data, double value, Attribute att) {
 		int dataSize = data.numInstances();
-		Instances[] splitData = new Instances[2];
-		weights = new double[2];
+		Branch[] splitData = new Branch[2];
 		for (int i=0; i<2; i++) {
-			splitData[i] = new Instances(data, data.numInstances());
-			weights[i] = 0;
+			splitData[i] = new Branch(data, data.numInstances());
 		}
 		for (int j = 0; j < dataSize; j++) {
 			Instance tmp = data.get(j);
 			if (!tmp.isMissing(att)){
 				if (tmp.value(att) <= value) {
 					splitData[0].add(tmp);
-					weights[0]++;
 				} else {
 					splitData[1].add(tmp);
-					weights[1]++;
 				}
 			}
 		}
 		int n=0;
 		for (int i=0; i<2; i++) {
-			splitData[i].compactify();
-			n += splitData[i].size();
+			splitData[i].data.compactify();
+			n += splitData[i].data.size();
 		}
 		
 		for (Instance inst: data){
 			if (inst.isMissing(att)){
 				for (int i=0; i<2; i++){
-					weights[i] += (double) splitData[i].size()/(double)n;
+					splitData[i].addWeight((double) splitData[i].data.size()/(double)n);
 				}
 			}
 		}
@@ -321,6 +311,30 @@ public class myC45 extends AbstractClassifier{
 			return classes.get(Utils.maxIndex(classCount));
 		} else {
 			return Double.NaN;
+		}
+	}
+	
+	public class Branch{
+		public Instances data;
+		public double weight;
+		
+		public Branch(Instances data){
+			this.data = new Instances(data);
+			weight = 0;
+		}
+		
+		public Branch(Instances data, int n){
+			this.data = new Instances(data, n);
+			weight = 0;
+		}
+		
+		public void add(Instance inst){
+			data.add(inst);
+			weight++;
+		}
+		
+		public void addWeight(double w){
+			weight += w;
 		}
 	}
 }
