@@ -24,6 +24,7 @@ public class myC45 extends AbstractClassifier{
 	private static final long serialVersionUID = 5L;
 	
 	public void setWeights(Branch[] dataBranches){
+		weights = new double[dataBranches.length];
 		for (int i=0; i<dataBranches.length; i++) {
 			weights[i] = dataBranches[i].weight;
 		}
