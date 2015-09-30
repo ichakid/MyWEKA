@@ -15,6 +15,7 @@ import weka.core.Capabilities.Capability;
 
 public class myC45 extends AbstractClassifier{
 	private Attribute attribute;
+	private double[] weights;
 	private myC45[] branches;
 	private List<Double> branchesVal;
 	private double classValue;
@@ -38,6 +39,9 @@ public class myC45 extends AbstractClassifier{
 		// TODO Auto-generated method stub
 		if (attribute == null) {
 			return classValue;
+		}
+		if (inst.isMissing(attribute)){
+			return branches[Utils.maxIndex(weights)].classifyInstance(inst);
 		}
 		return branches[branchesVal.indexOf((Double) inst.value(attribute))].classifyInstance(inst);
 	}
@@ -99,20 +103,37 @@ public class myC45 extends AbstractClassifier{
 	private Instances[] splitData(Instances data, Attribute att) {
 		List<Double> attVals = new ArrayList<Double>();
 		Instances[] splitData = new Instances[att.numValues()];
+		weights = new double[att.numValues()];
 		for (int i=0; i<att.numValues(); i++) {
 			splitData[i] = new Instances(data, data.numInstances());
+			weights[i] = 0;
 		}
 		Enumeration<Instance> instEnum = data.enumerateInstances();
 		while (instEnum.hasMoreElements()) {
 			Instance inst = instEnum.nextElement();
-			Double val = (Double) inst.value(att);
-			if (!attVals.contains(val)){
-				attVals.add(val);
+			if (!inst.isMissing(att)){
+				Double val = (Double) inst.value(att);
+				if (!attVals.contains(val)){
+					attVals.add(val);
+				}
+				splitData[attVals.indexOf(val)].add(inst);
+				weights[attVals.indexOf(val)]++;
 			}
-			splitData[attVals.indexOf(val)].add(inst);
 		}
+
+		int n = 0;
 		for (int i=0; i<att.numValues(); i++) {
 			splitData[i].compactify();
+			n += splitData[i].size();
+		}
+		
+		for (Instance inst: data){
+			if (inst.isMissing(att)){
+				for (Double val: attVals){
+					int idx = attVals.indexOf(val);
+					weights[idx] += (double) splitData[idx].size()/(double)n;
+				}
+			}
 		}
 		return splitData;
 	}
@@ -249,19 +270,35 @@ public class myC45 extends AbstractClassifier{
 	private Instances[] splitWithValue(Instances data, double value, Attribute att) {
 		int dataSize = data.numInstances();
 		Instances[] splitData = new Instances[2];
+		weights = new double[2];
 		for (int i=0; i<2; i++) {
 			splitData[i] = new Instances(data, data.numInstances());
+			weights[i] = 0;
 		}
 		for (int j = 0; j < dataSize; j++) {
 			Instance tmp = data.get(j);
-			if (tmp.value(att) <= value) {
-				splitData[0].add(tmp);
-			} else {
-				splitData[1].add(tmp);
+			if (!tmp.isMissing(att)){
+				if (tmp.value(att) <= value) {
+					splitData[0].add(tmp);
+					weights[0]++;
+				} else {
+					splitData[1].add(tmp);
+					weights[1]++;
+				}
 			}
 		}
+		int n=0;
 		for (int i=0; i<2; i++) {
 			splitData[i].compactify();
+			n += splitData[i].size();
+		}
+		
+		for (Instance inst: data){
+			if (inst.isMissing(att)){
+				for (int i=0; i<2; i++){
+					weights[i] += (double) splitData[i].size()/(double)n;
+				}
+			}
 		}
 		return splitData;
 	}
