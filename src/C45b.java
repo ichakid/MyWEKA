@@ -181,12 +181,12 @@ public class C45b extends AbstractClassifier{
 		int maxGainIdx = Utils.maxIndex(gains);
 		splitData[0] = new Branch(new Instances(tmpData, 0, (maxGainIdx+1)));
 		splitData[1] = new Branch(new Instances(tmpData, (maxGainIdx+1), (tmpData.size()-(maxGainIdx+1))));
-		Double spltVal = splitterVal.get(maxGainIdx);
-;		for (Instance inst: data){
+//		Double spltVal = splitterVal.get(maxGainIdx);
+		for (Instance inst: data){
 			if (inst.isMissing(att)){
-				for (Double val: attVals){ //TODO loop twice
-					int idx = attVals.indexOf(val); //TODO if-else condition, compare with spltVal (?)
-					splitData[idx].addWeight((double) splitData[idx].data.size()/(double)tmpData.size());
+				for (int i = 0; i < 2; i++){ //TODO loop twice
+					//TODO if-else condition, compare with spltVal (?)
+					splitData[i].addWeight((double) splitData[i].data.size()/(double)tmpData.size());
 				}
 			}
 		}
