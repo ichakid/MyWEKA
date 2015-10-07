@@ -8,7 +8,6 @@ import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.NoSupportForMissingValuesException;
 import weka.core.Utils;
 
 

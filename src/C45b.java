@@ -26,7 +26,6 @@ public class C45b extends AbstractClassifier{
 	
 	@Override
 	public void buildClassifier(Instances data) throws Exception {
-		// TODO Auto-generated method stub
 		getCapabilities().testWithFail(data);
 		data = new Instances(data);
 		makeTree(data);
@@ -37,6 +36,9 @@ public class C45b extends AbstractClassifier{
 		if (attribute == null) {
 			return classValue;
 		}
+		if (inst.isMissing(attribute)){
+			return branches[Utils.maxIndex(weights)].classifyInstance(inst);
+		}
 		//handle numeric attribute here
 		if (attribute.isNumeric()) {
 			if ((Double) max((inst.value(attribute) - splitterVal), 0.0) != 0.0) {
@@ -44,8 +46,6 @@ public class C45b extends AbstractClassifier{
 			} else {
 				return branches[0].classifyInstance(inst);
 			}
-		} else if (inst.isMissing(attribute)){
-			return branches[Utils.maxIndex(weights)].classifyInstance(inst);
 		} else {
 			return branches[branchesVal.indexOf((Double) inst.value(attribute))].classifyInstance(inst);
 		}
@@ -65,6 +65,13 @@ public class C45b extends AbstractClassifier{
 		capabilities.enable(Capability.MISSING_VALUES);
 		capabilities.enable(Capability.BINARY_ATTRIBUTES);
 		return capabilities;
+	}
+	
+	public void setWeights(Branch[] dataBranches){
+		weights = new double[dataBranches.length];
+		for (int i=0; i<dataBranches.length; i++) {
+			weights[i] = dataBranches[i].weight;
+		}
 	}
 	
 	private void makeTree(Instances data) {
@@ -101,6 +108,7 @@ public class C45b extends AbstractClassifier{
 			}
 			branches = new C45b[dataBranches.length];
 			branchesVal = new ArrayList<Double>();
+			setWeights(dataBranches);
 			for (int i=0; i<dataBranches.length; i++){
 				System.out.println(dataBranches[i].data.numInstances());
 				if (dataBranches[i].data.numInstances() > 0){
