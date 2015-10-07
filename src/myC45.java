@@ -201,6 +201,7 @@ public class myC45 extends AbstractClassifier{
 			if (!att.isNumeric()) {
                 infoGains[att.index()] = computeInfoGain(data, att);             
 			} else {
+				numericSplitter = new double[2];
 				numericSplitter = handleNumericAttr(data, att);
 				infoGains[att.index()] = numericSplitter[1];
 			}

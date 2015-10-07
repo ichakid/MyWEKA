@@ -60,7 +60,7 @@ public class MyWEKA {
 		} else if (algo.equals("id3")) {
 			model = new myID3();
 		} else {
-			model = new myC45();
+			model = new C45b();
 		}
 		model.buildClassifier(data);
 	}
@@ -140,7 +140,7 @@ public class MyWEKA {
 		System.out.println("Input filename: ");
 		String filename = input.nextLine();
 		switch (cmdString) {
-			case "1": mw.loadData("/home/hayyuhanifah/Documents/ML/weka-3-7-13/data/weather.nominal.arff");
+			case "1": mw.loadData("/home/hayyuhanifah/Documents/ML/weka-3-7-13/data/weather.numeric.arff");
 					  mw.setClassAttribute(4);
 					  mw.buildClassifier("c45");
 					  mw.crossValidation();
