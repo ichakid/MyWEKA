@@ -103,7 +103,7 @@ public class myID3 extends AbstractClassifier{
 		if (classes.size() > 0){
 			return classes.get(Utils.maxIndex(classCount));
 		} else {
-			return Double.NaN;
+			return Utils.missingValue();
 		}
 	}
 

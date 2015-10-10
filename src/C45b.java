@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.lang.Math;
 
 import weka.classifiers.AbstractClassifier;
 import weka.core.Attribute;
@@ -10,14 +11,21 @@ import weka.core.Instances;
 import weka.core.Utils;
 import weka.core.Capabilities.Capability;
 
-
+// For reference: 
+// http://www.cs.bc.edu/~alvarez/ML/statPruning.html
 public class C45b extends AbstractClassifier{
+	// confidence factor for pruning
+	private static final double z = 0.67;
+	
 	private Attribute attribute;
 	private double[] weights;
 	private C45b[] branches;
 	private List<Double> branchesVal;
 	private double classValue;
 	private double splitterVal;
+	
+	public int correctlyClassified;
+	public int incorrectlyClassified;
 	
 	/**
 	 * for serialization
@@ -29,11 +37,20 @@ public class C45b extends AbstractClassifier{
 		getCapabilities().testWithFail(data);
 		data = new Instances(data);
 		makeTree(data);
+		for (Instance inst: data) {
+			classifyInstance(inst);
+		}
+		prune();
 	}
 	
 	@Override
 	public double classifyInstance(Instance inst) throws Exception {
 		if (attribute == null) {
+			if (classValue == inst.classValue()) {
+				correctlyClassified++;
+			} else {
+				incorrectlyClassified++;
+			}
 			return classValue;
 		}
 		if (inst.isMissing(attribute)){
@@ -41,7 +58,7 @@ public class C45b extends AbstractClassifier{
 		}
 		//handle numeric attribute here
 		if (attribute.isNumeric()) {
-			if ((Double) max((inst.value(attribute) - splitterVal), 0.0) != 0.0) {
+			if ((Double) Math.max((inst.value(attribute) - splitterVal), 0.0) != 0.0) {
 				return branches[1].classifyInstance(inst);
 			} else {
 				return branches[0].classifyInstance(inst);
@@ -67,7 +84,7 @@ public class C45b extends AbstractClassifier{
 		return capabilities;
 	}
 	
-	public void setWeights(Branch[] dataBranches){
+	private void setWeights(Branch[] dataBranches){
 		weights = new double[dataBranches.length];
 		for (int i=0; i<dataBranches.length; i++) {
 			weights[i] = dataBranches[i].weight;
@@ -117,19 +134,15 @@ public class C45b extends AbstractClassifier{
 					else {
 						//branchesVal=0 for x<=splitterVal, else !=0
 						splitterVal = getSplitterVal(dataBranches, attribute);
-						branchesVal.add(i, (Double) max((dataBranches[i].data.firstInstance().value(attribute)-splitterVal), 0.0));
+						branchesVal.add(i, (Double) Math.max((dataBranches[i].data.firstInstance().value(attribute)-splitterVal), 0.0));
 					}
 				}
 				branches[i] = new C45b();
+				branches[i].correctlyClassified = 0;
+				branches[i].incorrectlyClassified = 0;
 				branches[i].makeTree(dataBranches[i].data);
 			}
 		}
-	}
-	
-	private double max(double a, double b) {
-		if (a > b)
-			return a;
-		return b;
 	}
 	
 	private double getSplitterVal(Branch[] splittedData, Attribute att) {
@@ -222,7 +235,7 @@ public class C45b extends AbstractClassifier{
 		if (classes.size() > 0){
 			return classes.get(Utils.maxIndex(classCount));
 		} else {
-			return Double.NaN;
+			return Utils.missingValue();
 		}
 	}
 	
@@ -282,6 +295,40 @@ public class C45b extends AbstractClassifier{
 			}
 		}
 		return splitData;
+	}
+	
+	private void prune() {
+		System.out.println("running prune");
+		if (attribute != null) {
+			for (C45b branch : branches) {
+				branch.prune();
+			}
+			
+			double avrgP = 0;
+			correctlyClassified = 0;
+			incorrectlyClassified = 0;
+			for (C45b branch : branches) {
+				//calculate upper p estimate for branch
+				int N = branch.correctlyClassified + branch.incorrectlyClassified;
+				double f = (double) branch.incorrectlyClassified / (double) N;
+				double upperP = f + z * Math.sqrt((double)f * (double)(1-f) / (double)N);
+				avrgP += upperP;
+				correctlyClassified += branch.correctlyClassified;
+				incorrectlyClassified += branch.incorrectlyClassified;
+			}
+			
+			//calculate upper p estimate for tree
+			int N = correctlyClassified + incorrectlyClassified;
+			double f = (double) incorrectlyClassified / (double) N;
+			double upperP = f + z * Math.sqrt((double)f * (double)(1-f) / (double)N);
+			avrgP = (double) avrgP / (double) branches.length;
+			
+			// check if the pruned tree results in 
+			// a lower upper estimate for the error rate
+			if (avrgP < upperP) {	//then prune
+				branches = null;
+			}
+		}
 	}
 	
 	public class Branch{
