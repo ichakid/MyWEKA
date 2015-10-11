@@ -112,7 +112,7 @@ public class MyWEKA {
 		model = (Classifier) SerializationHelper.read(modelFile);
 	}
 	
-	public void classify(String unlabeledFile) throws Exception{
+	public void classify(String unlabeledFile, String output) throws Exception{
 		if (model == null){
 			System.out.println("model is null");
 			return;
@@ -127,7 +127,7 @@ public class MyWEKA {
             labeled.instance(i).setClassValue(clsLabel);
         }
         
-        DataSink.write("labeled-" + unlabeledFile, labeled);
+        DataSink.write(output, labeled);
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -137,17 +137,52 @@ public class MyWEKA {
 		System.out.println("1. Load Data");
 		System.out.println("2. Load Model");
 		String cmdString = input.next();
-		System.out.println("Input filename: ");
-		String filename = input.nextLine();
 		switch (cmdString) {
-			case "1": mw.loadData("/home/hayyuhanifah/Documents/ML/weka-3-7-13/data/weather.numeric.arff");
-					  mw.setClassAttribute(4);
-					  mw.buildClassifier("c45");
-					  mw.crossValidation();
-//					  mw.saveModel("/home/hayyuhanifah/Documents/modelc45");
-					  break;
-			case "2": mw.loadModel(filename);
-					  break;
+			case "1": 
+				System.out.println("Input filename: ");
+				String file = input.nextLine();
+				mw.loadData(file);
+				System.out.println("Set class index: ");
+				int classIdx = input.nextInt();
+			  	mw.setClassAttribute(classIdx);
+			  	System.out.println("Choose decision tree algorithm to build model (j48/id3/c45): ");
+			  	cmdString = input.nextLine();
+			  	mw.buildClassifier(cmdString);
+			  	System.out.println("Save model? (y/n): ");
+			  	cmdString = input.nextLine();
+			  	if (cmdString.equals("y")){
+			  		System.out.println("Input filename: ");
+			  		cmdString = input.nextLine();
+			  		mw.saveModel(cmdString);
+			  		System.out.println("Saved.");
+			  	}
+			  	System.out.println("Evaluate model by:");
+			  	System.out.println("1. 10-fold Cross Validation");
+			  	System.out.println("2. Percentage Split");
+			  	cmdString = input.nextLine();
+			  	if (cmdString.equals("1")) {
+			  		mw.crossValidation();
+			  	} else if (cmdString.equals("2")) {
+			  		System.out.println("Enter percentage:");
+			  		Double percent = input.nextDouble();
+			  		mw.percentageSplit(percent);
+			  	}
+			  	break;
+			case "2": 
+				System.out.println("Input filename: ");
+				cmdString = input.nextLine();
+				mw.loadModel(cmdString);
+				System.out.println("Classify unlabeled data? (y/n): ");
+				if (!cmdString.equals("y")) {
+					break;
+				}
+		  		System.out.println("Input filename: ");
+		  		cmdString = input.nextLine();
+		  		System.out.println("Output filename: ");
+		  		String out = input.nextLine();
+				mw.classify(cmdString, out);
+				System.out.println("Finished. Labeled data => " + out);
+				break;
 			default:
 				break;
 		}

@@ -127,7 +127,6 @@ public class C45b extends AbstractClassifier{
 			branchesVal = new ArrayList<Double>();
 			setWeights(dataBranches);
 			for (int i=0; i<dataBranches.length; i++){
-				System.out.println(dataBranches[i].data.numInstances());
 				if (dataBranches[i].data.numInstances() > 0){
 					if(!attribute.isNumeric())
 						branchesVal.add(i, (Double) dataBranches[i].data.firstInstance().value(attribute));
@@ -180,8 +179,6 @@ public class C45b extends AbstractClassifier{
 		data.sort(att);
 		double gain = computeEntropy(data);
 		
-		//TODO add handler missing Value, in Weka after sorting ascending, instance with missing value is placed in the last row
-		//pasti missing value nya bakal ada di splitData[1] dong? is it ok? gimana ngitung splitterVal kalau missing value ada di perbatasan?
 		Instances tmpData = new Instances(data);
 		tmpData.deleteWithMissing(att);
 		
@@ -202,11 +199,9 @@ public class C45b extends AbstractClassifier{
 		int maxGainIdx = Utils.maxIndex(gains);
 		splitData[0] = new Branch(new Instances(tmpData, 0, (maxGainIdx+1)));
 		splitData[1] = new Branch(new Instances(tmpData, (maxGainIdx+1), (tmpData.size()-(maxGainIdx+1))));
-//		Double spltVal = splitterVal.get(maxGainIdx);
 		for (Instance inst: data){
 			if (inst.isMissing(att)){
-				for (int i = 0; i < 2; i++){ //TODO loop twice
-					//TODO if-else condition, compare with spltVal (?)
+				for (int i = 0; i < 2; i++){
 					splitData[i].addWeight((double) splitData[i].data.size()/(double)tmpData.size());
 				}
 			}
@@ -298,7 +293,6 @@ public class C45b extends AbstractClassifier{
 	}
 	
 	private void prune() {
-		System.out.println("running prune");
 		if (attribute != null) {
 			for (C45b branch : branches) {
 				branch.prune();
@@ -327,6 +321,7 @@ public class C45b extends AbstractClassifier{
 			// a lower upper estimate for the error rate
 			if (avrgP < upperP) {	//then prune
 				branches = null;
+				attribute = null;
 			}
 		}
 	}

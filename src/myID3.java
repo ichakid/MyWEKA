@@ -76,7 +76,6 @@ public class myID3 extends AbstractClassifier{
 			branches = new myID3[dataBranches.length];
 			branchesVal = new ArrayList<Double>();
 			for (int i=0; i<dataBranches.length; i++){
-				System.out.println(dataBranches[i].numInstances());
 				if (dataBranches[i].numInstances() > 0){
 					branchesVal.add(i, (Double) dataBranches[i].firstInstance().value(attribute));
 				}
